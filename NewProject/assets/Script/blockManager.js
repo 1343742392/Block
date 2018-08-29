@@ -1,13 +1,7 @@
-// Learn cc.Class:
-//  - [Chinese] http://docs.cocos.com/creator/manual/zh/scripting/class.html
-//  - [English] http://www.cocos2d-x.org/docs/creator/en/scripting/class.html
-// Learn Attribute:
-//  - [Chinese] http://docs.cocos.com/creator/manual/zh/scripting/reference/attributes.html
-//  - [English] http://www.cocos2d-x.org/docs/creator/en/scripting/reference/attributes.html
-// Learn life-cycle callbacks:
-//  - [Chinese] http://docs.cocos.com/creator/manual/zh/scripting/life-cycle-callbacks.html
-//  - [English] http://www.cocos2d-x.org/docs/creator/en/scripting/life-cycle-callbacks.html
-function grid(rowNum, columnNum) 
+
+/*
+
+function Grid(rowNum, columnNum) 
 {
     var rowArray = new Array(rowNum);
     this.rowNum = rowNum;
@@ -26,6 +20,7 @@ function grid(rowNum, columnNum)
     this.set = function (obj, row, colum) 
     {
         rowArray[row][colum] = obj;
+        obj.setPosition()
     };
 
     this.get = function (row, colum)
@@ -34,7 +29,39 @@ function grid(rowNum, columnNum)
     }
     
 }
+*/
 
+class Grid
+{
+    
+    constructor(rowNum, columnNum)
+    {
+        this.rowArray = new Array(rowNum);
+        this.rowNum = rowNum;
+        this.columnNum = columnNum;
+        for (var f = 0; f < columnNum; f++) 
+        {
+            this.rowArray[f] = Array(25);
+        }
+    }
+
+    add(obj, row, colum) 
+    {
+        this.rowArray[row][colum] = obj;
+        obj.setPosition(300, 1300);
+    };
+
+    set(obj, row, colum) 
+    {
+        this.rowArray[row][colum] = obj;
+        obj.setPosition()
+    };
+
+    get(row, colum)
+    {
+        return this.rowArray[row][colum];
+    }
+}
 
 var gri = null;
 cc.Class({
@@ -71,7 +98,7 @@ cc.Class({
         var blockClone = cc.instantiate(this.block);
         var scene = cc.director.getScene();
         blockClone.parent = scene;
-        gri = new grid(25, 80);
+        gri = new Grid(25, 80);
         gri.add(blockClone, 0, 0);
 
     },
