@@ -34,27 +34,32 @@ function Grid(rowNum, columnNum)
 class Grid
 {
     
-    constructor(rowNum, columnNum)
+    constructor(rowNum, columnNum, size)
     {
         this.rowArray = new Array(rowNum);
         this.rowNum = rowNum;
         this.columnNum = columnNum;
+        this.blockSize = size;
         for (var f = 0; f < columnNum; f++) 
         {
             this.rowArray[f] = Array(25);
         }
     }
 
-    add(obj, row, colum) 
+    add(obj) 
     {
-        this.rowArray[row][colum] = obj;
-        obj.setPosition(300, 1300);
+        this.rowArray[13][0] = obj;
+        obj.setPosition(325, 1415);
     };
 
     set(obj, row, colum) 
     {
         this.rowArray[row][colum] = obj;
-        obj.setPosition()
+        if(obj == null) return;
+        let x = row * (this.blockSize / 2);
+        let y = 1440 -  colum * (this.blockSize / 2);
+        console.log(`set size:${this.blockSize}   row:${row}`);
+        obj.setPosition(x, y);
     };
 
     get(row, colum)
@@ -84,9 +89,9 @@ cc.Class({
                 if(block == undefined) continue;
                 if(block.getComponent("block").activite)
                 {
-                    block.setPosition(block.x, block.y - 50);
                     gri.set(null,f,f1);
-                    gri.set(block,f + 1,f1)
+                    gri.set(block,f,f1 + 1)
+                    return;
                 }
             }
         }
@@ -98,8 +103,8 @@ cc.Class({
         var blockClone = cc.instantiate(this.block);
         var scene = cc.director.getScene();
         blockClone.parent = scene;
-        gri = new Grid(25, 80);
-        gri.add(blockClone, 0, 0);
+        gri = new Grid(25, 80, 50);
+        gri.add(blockClone);
 
     },
 
@@ -116,7 +121,7 @@ cc.Class({
         setTimeout(() => {
             this.down();
             this.autoDown();
-        }, 200);
+        }, 500);
     }
    
 
