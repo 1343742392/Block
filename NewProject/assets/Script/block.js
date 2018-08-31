@@ -19,7 +19,7 @@ cc.Class({
         //     type: cc.SpriteFrame, // optional, default is typeof default
         //     serializable: true,   // optional, default is true
         // },
-        activite:false
+        active:false
     },
 
     // LIFE-CYCLE CALLBACKS:
