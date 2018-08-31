@@ -70,7 +70,7 @@ class Grid
 
     get(row, colum)
     {
-        if(row > this.rowNum || colum > this.columnNum) return false;
+        if(row >= this.rowNum || colum >= this.columnNum || row < 0 || colum < 0) return false;
         return this.rowArray[row][colum];
     }
 
@@ -179,7 +179,7 @@ cc.Class({
         setTimeout(() => {
             this.down();
             this.autoDown();
-        }, 500);
+        }, 2000);
     }
    
 
