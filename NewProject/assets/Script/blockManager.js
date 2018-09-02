@@ -33,7 +33,7 @@ function Grid(rowNum, columnNum)
 
 function log(str)
 {
-    //console.log(str);
+    console.log(str);
 }
 
 class Grid
@@ -59,12 +59,23 @@ class Grid
 
     set(obj, row, colum) 
     {
-        if(row > this.rowNum || colum > this.columnNum) return false;
+        if(row >= this.rowNum || colum >= this.columnNum) return false;
         this.rowArray[row][colum] = obj;
         if(obj == null) return;
         let x = colum * this.blockSize + 25;
         let y = 1415 -  row * this.blockSize;
-        log(`set size:${x}   row:${y}`);
+        log(`set x:${x}   y:${y}`);
+        obj.setPosition(x, y);
+    };
+
+    set(obj, pos) 
+    {
+        if(pos.x >= this.rowNum || pos.y >= this.columnNum) return false;
+        this.rowArray[pos.x][pos.y] = obj;
+        if(obj == null) return;
+        let x = pos.y * this.blockSize + 25;
+        let y = 1415 -  pos.x * this.blockSize;
+        log(`set x:${x}   y:${y}`);
         obj.setPosition(x, y);
     };
 
@@ -76,7 +87,9 @@ class Grid
 
 }
 
-var gri = null;
+var gri =  new Grid(28, 10, 50);
+var activeNum = 4;
+
 cc.Class({
     extends: cc.Component,
     properties: {
@@ -89,6 +102,9 @@ cc.Class({
 
     down:function()
     {
+        var index = 0
+        var pos = [];
+        var values = [];
         for(var f = 0; f < gri.rowNum; f ++)
         {
             for(var f1  = 0; f1 < gri.columnNum; f1 ++)
@@ -99,10 +115,22 @@ cc.Class({
                 {
                     if(gri.get(f + 1,f1) == undefined || gri.get(f + 1,f1) != false)
                     {
-                        gri.set(null,f,f1);
-                        gri.set(block,f + 1,f1);
+                        values.push(block);
+                        pos.push(new cc.Vec2(f, f1));
+                        index ++;
+                        if(index == activeNum) 
+                        {
+                            for(var f2 =  pos.length - 1; f2 >= 0; f2 --)
+                            {
+                                gri.set(null, pos[f2]);
+                            }
+                            for(var f2 =  pos.length - 1; f2 >= 0; f2 --)
+                            {
+                                gri.set(values[f2], pos[f2].x += 1, pos[f2].y);
+                            }
+                            return;
+                        }
                     }
-                    return;
                 }
             }
         }
@@ -156,13 +184,28 @@ cc.Class({
 
     },
 
-    addblock:function()
+    addblock:function(bolckType)
     {
-        var blockClone = cc.instantiate(this.block);
-        var scene = cc.director.getScene();
-        blockClone.parent = scene;
-        gri = new Grid(28, 10, 50);
-        gri.add(blockClone);
+        switch(bolckType)
+        {
+           case  "7":
+           var blockClone1 = cc.instantiate(this.block);
+           var blockClone2 = cc.instantiate(this.block);
+           var blockClone3 = cc.instantiate(this.block);
+           var blockClone4 = cc.instantiate(this.block);
+           var scene = cc.director.getScene();
+           blockClone1.parent = scene;
+           blockClone2.parent = scene;
+           blockClone3.parent = scene;
+           blockClone4.parent = scene;
+           
+           gri.set(blockClone1, 0, 5);
+           gri.set(blockClone2, 0, 6);
+           gri.set(blockClone3, 0, 7);
+           gri.set(blockClone4, 1, 5);
+           break;
+        }
+       
 
     },
 
@@ -171,7 +214,8 @@ cc.Class({
     },
 
     start () {
-        this.addblock();
+
+        this.addblock("7");
         this.autoDown();
     },
 
@@ -179,7 +223,7 @@ cc.Class({
         setTimeout(() => {
             this.down();
             this.autoDown();
-        }, 2000);
+        }, 500);
     }
    
 
