@@ -20,7 +20,8 @@ cc.Class({
         //     serializable: true,   // optional, default is true
         // },
         active:false,
-        id:null
+        id:null,
+        center:false,
     },
 
     // LIFE-CYCLE CALLBACKS:
