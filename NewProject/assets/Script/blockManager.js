@@ -31,6 +31,7 @@ function Grid(rowNum, columnNum)
 }
 */
 
+
 function log(str)
 {
     console.log(str);
@@ -124,17 +125,27 @@ class Grid
                 }
             }
         }
+        return reslut;
     }
 
 }
 
 var gri =  new Grid(28, 10, 50);
 var activeNum = 4;
+var autoDownTime = 500;
 
 cc.Class({
     extends: cc.Component,
     properties: {
         block: {
+            default: null,
+            type: cc.Node,
+          },
+          left: {
+            default: null,
+            type: cc.Node,
+          },
+          right: {
             default: null,
             type: cc.Node,
           },
@@ -158,7 +169,7 @@ cc.Class({
         if(center == null) 
         {
             log('not center point, unable rotate')
-            reutrn;
+            return;
         }
         //从网格提取方块
         var blocks = [];
@@ -205,28 +216,51 @@ cc.Class({
                 if(block == undefined) continue;
                 if(block.getComponent("block").active)
                 {
-                    if(gri.get(f + 1,f1) == undefined || gri.get(f + 1,f1) != false)
+                    if( gri.get(f + 1,f1) != false)
                     {
-                        values.push(block);
-                        pos.push(new cc.Vec2(f, f1));
-                        index ++;
-                        if(index == activeNum) 
+                        //出网格
+                        if(f == gri.rowNum)
                         {
-                            for(var f2 =  pos.length - 1; f2 >= 0; f2 --)
-                            {
-                                gri.set(null, pos[f2]);
-                            }
-                            for(var f2 =  pos.length - 1; f2 >= 0; f2 --)
-                            {
-                                gri.set(values[f2], pos[f2].x += 1, pos[f2].y);
-                            }
-                            return;
+                            //遇到下面是别的对象结束
+                            gri.getActives().forEach(element => {
+                                element.getComponent("block").active = false;
+                            });
                         }
+                        continue;
+                    }
+                    if(gri.get(f + 1,f1) != undefined)
+                    {
+                        //有对象
+                        gri.getActives().forEach(element => {
+                            element.getComponent("block").active = false;
+                        });
+                    }
+                    
+                    values.push(block);
+                    pos.push(new cc.Vec2(f, f1));
+                    index ++;
+                    if(index == activeNum) 
+                    {
+                        for(var f2 =  pos.length - 1; f2 >= 0; f2 --)
+                        {
+                            gri.set(null, pos[f2]);
+                        }
+                        for(var f2 =  pos.length - 1; f2 >= 0; f2 --)
+                        {
+                            gri.set(values[f2], pos[f2].x += 1, pos[f2].y);
+                        }
+                        return;
                     }
                 }
             }
         }
         
+    },
+    speedDown:function()
+    {
+        autoDownTime = 50;
+        right.getComponent("Button").interactable = false;
+        lef.getComponent("Button").interactable = false;
     },
 
     right:function()
@@ -337,8 +371,6 @@ cc.Class({
     },
 
     start () {
-        var a = new cc.Vec2(1,1);
-        alert(a.add(a));
         this.addblock("7");
         this.autoDown();
     },
@@ -347,7 +379,7 @@ cc.Class({
         setTimeout(() => {
             this.down();
             this.autoDown();
-        }, 500);
+        }, autoDownTime);
     }
    
 
