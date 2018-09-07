@@ -183,6 +183,7 @@ cc.Class({
         if(center.equals(new cc.Vec2(0, 0)) ) 
         {
             log('not center point, unable rotate')
+            gri.setBlocks(actives, projects);
             return;
         }
         //从网格提取方块
@@ -205,8 +206,8 @@ cc.Class({
             var re = this.relative(actives[f],  center);
             var add = re.rotate(3.1415 / 2);
             var  project = center.add(add);
-            project.x = parseInt(project.x);
-            project.y = parseInt(project.y);
+            project.x = Math.round(project.x);
+            project.y = Math.round(project.y);
 
             if(gri.get(project) != undefined || gri.get(project) == false)
             {
@@ -369,11 +370,6 @@ cc.Class({
             }
         }
     },
-    
-    rotate:function()
-    {
-
-    },
 
     addblock:function(bolckType)
     {
@@ -414,7 +410,7 @@ cc.Class({
     autoDown:function(){
         setTimeout(() => {
             this.down();
-            this.autoDown();
+            //this.autoDown();
         }, autoDownTime);
     }
    
