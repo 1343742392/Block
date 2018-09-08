@@ -23,14 +23,26 @@ function Grid(rowNum, columnNum)
         obj.setPosition()
     };
 
-    this.get = function (row, colum)
+    this.getBlock = function (row, colum)
     {
         return rowArray[row][colum];
     }
     
 }
 */
-
+function randomNum(minNum,maxNum){ 
+    switch(arguments.length){ 
+        case 1: 
+            return parseInt(Math.random()*minNum,10); 
+        break; 
+        case 2: 
+            return parseInt(Math.random()*(maxNum-minNum)+minNum,10); 
+        break; 
+            default: 
+                return 0; 
+            break; 
+    } 
+} 
 //碰撞检测方向要反过来 
 function log(str)
 {
@@ -67,7 +79,7 @@ class Grid
             case 2:
                 var pos = arguments[1];
                 if( pos.x >= this.columnNum || pos.y >= this.rowNum ) return false;
-                this.rowArray[pos.x][pos.y] = obj;
+                this.rowArray[pos.y][pos.x] = obj;
                 if(obj == null) return;
                 var xPoint = pos.x * this.blockSize + 25;
                 var yPoint = 1415 -  pos.y * this.blockSize;
@@ -77,7 +89,7 @@ class Grid
                 var x = arguments[1];
                 var y = arguments[2];
                 if( x >= this.columnNum || y >= this.rowNum ) return false;
-                this.rowArray[x][y] = obj;
+                this.rowArray[y][x] = obj;
                 if(obj == null) return;
                 var xPoint = x * this.blockSize + 25;
                 var yPoint = 1415 -  y * this.blockSize;
@@ -90,33 +102,46 @@ class Grid
 
     setBlocks(objs, posArr)
     {
+        var index = 0;
         objs.forEach(obj=>
         {
-            var pos = posArr.pop();
+            var pos = posArr[index];
             if(pos.x >= this.columnNum || pos.y >= this.rowNum ) return false;
-            this.rowArray[pos.x][pos.y] = obj;
+            this.rowArray[pos.y][pos.x] = obj;
             if(obj == null) return;
-            let x = pos.y * this.blockSize + 25;
-            let y = 1415 -  pos.x * this.blockSize;
+            let x = pos.x * this.blockSize + 25;
+            let y = 1415 -  pos.y * this.blockSize;
             obj.setPosition(x, y);
+            index ++;
         })
     }
 
-    get( colum,row)
+    getBlock( colum,row)
     {
         switch(arguments.length)
         {
             case 1:
                 var pos = arguments[0];
                 if(pos.x >= this.columnNum  || pos.y >= this.rowNum  || pos.x < 0 || pos.y < 0) return false;
-                return this.rowArray[pos.x][pos.y];
+                return this.rowArray[pos.y][pos.x];
             break;
             case 2:
                 if(colum >= this.columnNum   || row >= this.rowNum  || row < 0 || colum < 0) return false;
-                return this.rowArray[colum][row];
+                return this.rowArray[row][colum];
             break;
         }
         
+    }
+
+    getBlocks( allPos)
+    {
+        var reslut = [];
+        allPos.forEach(pos=>
+        {
+            if(pos.x >= this.columnNum  || pos.y >= this.rowNum  || pos.x < 0 || pos.y < 0) return false;
+            reslut.push(this.rowArray[pos.y][pos.x]);
+        })
+        return reslut;
     }
 
     getActives(num)
@@ -126,7 +151,7 @@ class Grid
         {
             for(var f1  = 0; f1 < this.rowNum; f1 ++)
             {
-                var block = this.get(f,f1);
+                var block = this.getBlock(f,f1);
                 if(block == undefined) continue;
                 if(block.getComponent("block").active)
                 {
@@ -143,7 +168,9 @@ class Grid
 
 var gri =  new Grid(10, 28, 50);
 var activeNum = 4;
-var autoDownTime = 2000;
+var autoDownTime = 500;
+var deleteAnimaLen = 1000;
+var blockNames = ["7", "z", "4", "1"];
 
 cc.Class({
     extends: cc.Component,
@@ -174,7 +201,7 @@ cc.Class({
         var actives = gri.getActives(activeNum);
         for(var f = 0; f < actives.length; f ++)
         {
-           if(gri.get(actives[f]).center == true)
+           if(gri.getBlock(actives[f]).center == true)
            {
                center = actives[f];
                break;
@@ -190,7 +217,7 @@ cc.Class({
         var blocks = [];
         for(var f = 0; f < actives.length; f ++)
         {
-            blocks.push(gri.get(actives[f]));
+            blocks.push(gri.getBlock(actives[f]));
             gri.setBlock(undefined, actives[f]);
         }
         
@@ -198,20 +225,15 @@ cc.Class({
         var projects = [];
         for(var f = 0; f < actives.length; f ++)
         {
-
-            /*var a = new cc.Vec2(-1, 0);
-            var b = this.relative(a, new cc.Vec2(0,0));
-            alert(b.rotate(3.1415 / 2))*/
-
             var re = this.relative(actives[f],  center);
             var add = re.rotate(3.1415 / 2);
             var  project = center.add(add);
             project.x = Math.round(project.x);
             project.y = Math.round(project.y);
 
-            if(gri.get(project) != undefined )
+            if(gri.getBlock(project) != undefined )
             {
-                //没有空间旋转
+                gri.setBlocks(blocks, actives);
                 return;
             }
             projects.push(project);
@@ -227,70 +249,49 @@ cc.Class({
 
     down:function()
     {
-
-        var index = 0
-        var pos = [];
-        var values = [];
-        for(var f = 0; f < gri.columnNum; f ++)
-        {
-            for(var f1  = 0; f1 < gri.rowNum; f1 ++)
+         //提取方块
+         var blocks = [];
+         var actives = gri.getActives(activeNum);
+         for(var f = 0; f < actives.length; f++)
+         {
+             blocks.push(gri.getBlock(actives[f]));
+             gri.setBlock(undefined, actives[f]);
+         }
+ 
+         //能否移动
+         for(var f = 0; f < actives.length; f ++)
+         {
+            var object = new cc.Vec2(actives[f].x , actives[f].y + 1);
+            var reslut = gri.getBlock(object);
+            if(reslut != undefined)
             {
-                var block = gri.get(f,f1);
-                if(block == undefined) continue;
-                if(block.getComponent("block").active)
+                if(reslut == false)
                 {
-                    values.push(block);
-                    pos.push(new cc.Vec2(f, f1));
-                    index ++;
-                    if(index == activeNum) 
+                    log("出网格");
+                    gri.setBlocks(blocks, actives);
+                    if(actives[f].y == gri.rowNum - 1)
                     {
-                        for(var f2 =  pos.length - 1; f2 >= 0; f2 --)
-                        {
-                            gri.setBlock(undefined, pos[f2]);
-                        }
-                        for(var f3 = pos.length - 1; f3 >= 0 ; f3 --)
-                        {
-
-                            if(gri.get(pos[f3].x, pos[f3].y + 1) == false)
-                            {
-                                //将会出网格
-                                if(f == gri.rowNum - 1)
-                                {
-                                    //底部网格
-                                    values.forEach(value=>
-                                    {
-                                        value.getComponent("block").active = false;
-                                    })
-                                    autoDownTime = 500;
-                                    this.rightButton.getComponent(cc.Button).interactable = true;
-                                    this.leftButton.getComponent(cc.Button).interactable = true;
-
-                                    this.addblock('7');
-                                    gri.setBlocks(values, pos);
-                                    return;
-                                }
-                                return;
-                            }
-                            if(typeof gri.get( pos[f3].x, pos[f3].y + 1) == "object" )
-                            {
-                                //将会碰到其他块
-                                values.forEach(value=>
-                                {
-                                    value.getComponent("block").active = false;
-                                })
-                                autoDownTime = 500;
-                                this.rightButton.getComponent(cc.Button).interactable = true;
-                                this.leftButton.getComponent(cc.Button).interactable = true;
-                                gri.setBlocks(values, pos);
-                                return;
-                            }
-                            gri.setBlock(values[f3], pos[f3].x, pos[f3].y + 1);
-                        }
-                        return;
+                        this.end(blocks);
                     }
+                   return;
+                }
+                if(typeof reslut == "object")
+                {
+                    log("会碰到别的块");
+                    gri.setBlocks(blocks, actives);
+                    this.end(blocks);
+                    
+                   return;
                 }
             }
-        }
+         }
+ 
+         //放置
+         for(var f = 0; f < actives.length; f ++)
+         {
+             var object = new cc.Vec2(actives[f].x, actives[f].y + 1);
+             gri.setBlock(blocks[f], object);
+         }
         
     },
     speedDown:function()
@@ -307,7 +308,7 @@ cc.Class({
         var actives = gri.getActives(activeNum);
         for(var f = 0; f < actives.length; f++)
         {
-            blocks.push(gri.setBlock(actives[f]));
+            blocks.push(gri.getBlock(actives[f]));
             gri.setBlock(undefined, actives[f]);
         }
 
@@ -315,7 +316,7 @@ cc.Class({
         for(var f = 0; f < actives.length; f ++)
         {
            var object = new cc.Vec2(actives[f].x + 1, actives[f].y);
-           if(gri.get(object) != undefined)
+           if(gri.getBlock(object) != undefined)
            {
                log("没有空间移动");
                 gri.setBlocks(blocks, actives);
@@ -329,79 +330,122 @@ cc.Class({
             var object = new cc.Vec2(actives[f].x + 1, actives[f].y);
             gri.setBlock(blocks[f], object);
         }
-
-        /*var index = 0
-        var pos = [];
-        var values = [];
-        for(var f = 0; f < gri.rowNum; f ++)
-        {
-            for(var f1  = 0; f1 < gri.columnNum; f1 ++)
-            {
-                var block = gri.get(f,f1);
-                if(block == undefined) continue;
-                if(block.getComponent("block").active)
-                {
-                    if(gri.get(f + 1,f1) == undefined || gri.get(f + 1,f1) != false)
-                    {
-                        values.push(block);
-                        pos.push(new cc.Vec2(f, f1));
-                        index ++;
-                        if(index == activeNum) 
-                        {
-                            for(var f2 =  pos.length - 1; f2 >= 0; f2 --)
-                            {
-                                gri.setBlock(undefined, pos[f2]);
-                            }
-                            for(var f2 =  pos.length - 1; f2 >= 0; f2 --)
-                            {
-                                gri.setBlock(values[f2], pos[f2].x + 1 , pos[f2].y);
-                            }
-                            return;
-                        }
-                    }
-                }
-            }
-        }*/
     },
 
     left:function()
     {
-        var index = 0
-        var pos = [];
-        var values = [];
-        for(var f = 0; f < gri.rowNum; f ++)
-        {
-            for(var f1  = 0; f1 < gri.columnNum; f1 ++)
+         //提取方块
+         var blocks = [];
+         var actives = gri.getActives(activeNum);
+         for(var f = 0; f < actives.length; f++)
+         {
+             blocks.push(gri.getBlock(actives[f]));
+             gri.setBlock(undefined, actives[f]);
+         }
+ 
+         //能否移动
+         for(var f = 0; f < actives.length; f ++)
+         {
+            var object = new cc.Vec2(actives[f].x - 1, actives[f].y);
+            if(gri.getBlock(object) != undefined)
             {
-                var block = gri.get(f,f1);
-                if(block == undefined) continue;
-                if(block.getComponent("block").active)
-                {
-                    if(gri.get(f - 1,f1) == undefined || gri.get(f - 1,f1) != false)
-                    {
-                        values.push(block);
-                        pos.push(new cc.Vec2(f, f1));
-                        index ++;
-                        if(index == activeNum) 
-                        {
-                            for(var f2 =  pos.length - 1; f2 >= 0; f2 --)
-                            {
-                                gri.setBlock(undefined, pos[f2]);
-                            }
-                            for(var f2 =  pos.length - 1; f2 >= 0; f2 --)
-                            {
-                                gri.setBlock(values[f2], pos[f2].x - 1, pos[f2].y);
-                            }
-                            return;
-                        }
-                    }
-                }
+                log("没有空间移动");
+                 gri.setBlocks(blocks, actives);
+                return;
             }
-        }
+         }
+ 
+         //放置
+         for(var f = 0; f < actives.length; f ++)
+         {
+             var object = new cc.Vec2(actives[f].x - 1, actives[f].y);
+             gri.setBlock(blocks[f], object);
+         }
+    },
+    start:function()
+    {
+
+    },
+    end:function(blocks)
+    {
+        //消除
+        var f1 = 0;
+       
+
+        var deleteYs = [];
+        gri.rowArray.forEach(colum=>
+        {
+            var index = 0;
+            
+            colum.forEach(value=>
+            {
+                if(typeof value == "object") index ++;
+            })
+            if(index == gri.columnNum)
+            {
+                //发现一行满了 开始消除动画
+                deleteYs.push(colum);
+                colum.forEach(block=>
+                {
+                    block.getComponent(cc.Animation).play("delete")
+                });
+                setTimeout(function()
+                {
+                     //消除动画播放完
+                    for(var f2 = 0; f2 < deleteYs.length; f2 ++)
+                    {
+                        var deleteLine = deleteYs[f2];
+                        var blocks =  gri.getBlocks(deleteLine);
+                        blocks.forEach(deleteColum=>
+                            {
+                                deleteColum.forEach(block=>
+                                {
+                                    block.getComponent(cc.Animation).stop("delete")
+                                    block.destroy();
+                                });
+        
+                            })
+                            
+                            var index = 0;
+                            blocks.forEach(block=>
+                            {
+                                gri.setBlock(undefined, index, deleteLine);
+                                index ++;
+                            })
+        
+                            //下移
+                            for(;deleteLine >= 0; deleteLine--)
+                            {
+                                for(var f3 = 0; f3 < gri.columnNum; f3 ++)
+                                {
+                                    gri.setBlock(gri.getBlock(f3, deleteLine), f3, deleteLine + 1);
+                                }
+                            }  
+                    }
+                     
+                }, deleteAnimaLen);
+            }
+            f1 ++;
+        })
+
+        //让方块不受控制
+        blocks.forEach(value=>
+        {
+            value.getComponent("block").active = false;
+        })
+        //恢复默认设置
+        autoDownTime = 500;
+        this.rightButton.getComponent(cc.Button).interactable = true;
+        this.leftButton.getComponent(cc.Button).interactable = true;
+
+        this.addblock(blockNames[randomNum(0, 4)]);
+
     },
 
     addblock:function(bolckType)
     {
+        bolckType = '4';
+        var scene = cc.director.getScene();
         switch(bolckType)
         {
            case  "7":
@@ -410,7 +454,6 @@ cc.Class({
            var blockClone3 = cc.instantiate(this.block);
            var blockClone4 = cc.instantiate(this.block);
            blockClone2.center = true;
-           var scene = cc.director.getScene();
            blockClone1.parent = scene;
            blockClone2.parent = scene;
            blockClone3.parent = scene;
@@ -420,6 +463,56 @@ cc.Class({
            gri.setBlock(blockClone2, 6, 0);
            gri.setBlock(blockClone3, 7, 0);
            gri.setBlock(blockClone4, 5, 1);
+           break;
+
+           case "z":
+           var blockClone1 = cc.instantiate(this.block);
+           var blockClone2 = cc.instantiate(this.block);
+           var blockClone3 = cc.instantiate(this.block);
+           var blockClone4 = cc.instantiate(this.block);
+           blockClone2.center = true;
+           blockClone1.parent = scene;
+           blockClone2.parent = scene;
+           blockClone3.parent = scene;
+           blockClone4.parent = scene;
+           
+           gri.setBlock(blockClone1, 5, 1);
+           gri.setBlock(blockClone2, 6, 1);
+           gri.setBlock(blockClone3, 6, 0);
+           gri.setBlock(blockClone4, 7, 0);
+           break;
+
+           case "1":
+           var blockClone1 = cc.instantiate(this.block);
+           var blockClone2 = cc.instantiate(this.block);
+           var blockClone3 = cc.instantiate(this.block);
+           var blockClone4 = cc.instantiate(this.block);
+           blockClone2.center = true;
+           blockClone1.parent = scene;
+           blockClone2.parent = scene;
+           blockClone3.parent = scene;
+           blockClone4.parent = scene;
+           
+           gri.setBlock(blockClone1, 6, 0);
+           gri.setBlock(blockClone2, 6, 1);
+           gri.setBlock(blockClone3, 6, 2);
+           gri.setBlock(blockClone4, 6, 3);
+           break;
+           case "4":
+           var blockClone1 = cc.instantiate(this.block);
+           var blockClone2 = cc.instantiate(this.block);
+           var blockClone3 = cc.instantiate(this.block);
+           var blockClone4 = cc.instantiate(this.block);
+           blockClone2.center = true;
+           blockClone1.parent = scene;
+           blockClone2.parent = scene;
+           blockClone3.parent = scene;
+           blockClone4.parent = scene;
+           
+           gri.setBlock(blockClone1, 5, 0);
+           gri.setBlock(blockClone2, 6, 0);
+           gri.setBlock(blockClone3, 5, 1);
+           gri.setBlock(blockClone4, 6, 1);
            break;
         }
        
@@ -432,14 +525,14 @@ cc.Class({
 
     start () {
         
-        this.addblock("7");
+        this.addblock(blockNames[randomNum(0, 4)]);
         this.autoDown();
     },
 
     autoDown:function(){
         setTimeout(() => {
             this.down();
-            //this.autoDown();
+            this.autoDown();
         }, autoDownTime);
     }
    
