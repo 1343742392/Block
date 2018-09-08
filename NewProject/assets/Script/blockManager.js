@@ -209,7 +209,7 @@ cc.Class({
             project.x = Math.round(project.x);
             project.y = Math.round(project.y);
 
-            if(gri.get(project) != undefined || gri.get(project) == false)
+            if(gri.get(project) != undefined )
             {
                 //没有空间旋转
                 return;
@@ -227,6 +227,7 @@ cc.Class({
 
     down:function()
     {
+
         var index = 0
         var pos = [];
         var values = [];
@@ -301,7 +302,35 @@ cc.Class({
 
     right:function()
     {
-        var index = 0
+        //提取方块
+        var blocks = [];
+        var actives = gri.getActives(activeNum);
+        for(var f = 0; f < actives.length; f++)
+        {
+            blocks.push(gri.setBlock(actives[f]));
+            gri.setBlock(undefined, actives[f]);
+        }
+
+        //能否移动
+        for(var f = 0; f < actives.length; f ++)
+        {
+           var object = new cc.Vec2(actives[f].x + 1, actives[f].y);
+           if(gri.get(object) != undefined)
+           {
+               log("没有空间移动");
+                gri.setBlocks(blocks, actives);
+               return;
+           }
+        }
+
+        //放置
+        for(var f = 0; f < actives.length; f ++)
+        {
+            var object = new cc.Vec2(actives[f].x + 1, actives[f].y);
+            gri.setBlock(blocks[f], object);
+        }
+
+        /*var index = 0
         var pos = [];
         var values = [];
         for(var f = 0; f < gri.rowNum; f ++)
@@ -332,7 +361,7 @@ cc.Class({
                     }
                 }
             }
-        }
+        }*/
     },
 
     left:function()
