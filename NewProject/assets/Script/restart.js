@@ -8,7 +8,6 @@
 //  - [Chinese] http://docs.cocos.com/creator/manual/zh/scripting/life-cycle-callbacks.html
 //  - [English] http://www.cocos2d-x.org/docs/creator/en/scripting/life-cycle-callbacks.html
 
-   
 cc.Class({
     extends: cc.Component,
 
@@ -20,21 +19,27 @@ cc.Class({
         //     type: cc.SpriteFrame, // optional, default is typeof default
         //     serializable: true,   // optional, default is true
         // },
-        active:false,
-        id:null,
-        center:false,
+        // bar: {
+        //     get () {
+        //         return this._bar;
+        //     },
+        //     set (value) {
+        //         this._bar = value;
+        //     }
+        // },
     },
 
     // LIFE-CYCLE CALLBACKS:
 
     // onLoad () {},
+    restart:function()
+    {
+        cc.director.loadScene("helloworld");
+    },
 
     start () {
+
     },
-    log:function()
-    {
-        console.log("ok");
-    }
 
     // update (dt) {},
 });

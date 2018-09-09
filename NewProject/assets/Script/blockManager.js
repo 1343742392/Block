@@ -168,9 +168,12 @@ class Grid
 
 var gri =  new Grid(10, 28, 50);
 var activeNum = 4;
-var autoDownTime = 500;
-var deleteAnimaLen = 1000;
+var autoDownTime = 0.5;
+var LOWDOWNTIME = 0.5;
+var SPEEDDOWNTIME = 0.05;
+var DELETEANIMALEN = 1;
 var blockNames = ["7", "z", "4", "1"];
+var downIndex = 0;
 
 cc.Class({
     extends: cc.Component,
@@ -187,6 +190,7 @@ cc.Class({
             default: null,
             type: cc.Node,
           },
+ 
          
     }, 
 
@@ -277,10 +281,15 @@ cc.Class({
                 }
                 if(typeof reslut == "object")
                 {
+                    if(downIndex== 0)
+                    {
+                        cc.director.loadScene("gameover");
+                        autoDownTime = 100000;
+                        return;
+                    }
                     log("会碰到别的块");
                     gri.setBlocks(blocks, actives);
                     this.end(blocks);
-                    
                    return;
                 }
             }
@@ -292,11 +301,11 @@ cc.Class({
              var object = new cc.Vec2(actives[f].x, actives[f].y + 1);
              gri.setBlock(blocks[f], object);
          }
-        
+         downIndex++
     },
     speedDown:function()
     {
-        autoDownTime = 50;
+        autoDownTime = SPEEDDOWNTIME;
         this.rightButton.getComponent(cc.Button).interactable = false;
         this.leftButton.getComponent(cc.Button).interactable = false;
     },
@@ -370,7 +379,7 @@ cc.Class({
     {
         //消除
         var f1 = 0;
-       
+        var hasDelete = false;
 
         var deleteYs = [];
         gri.rowArray.forEach(colum=>
@@ -384,67 +393,65 @@ cc.Class({
             if(index == gri.columnNum)
             {
                 //发现一行满了 开始消除动画
-                deleteYs.push(colum);
+                hasDelete = true;
+                deleteYs.push(f1);
                 colum.forEach(block=>
                 {
                     block.getComponent(cc.Animation).play("delete")
                 });
-                setTimeout(function()
-                {
-                     //消除动画播放完
-                    for(var f2 = 0; f2 < deleteYs.length; f2 ++)
-                    {
-                        var deleteLine = deleteYs[f2];
-                        var blocks =  gri.getBlocks(deleteLine);
-                        blocks.forEach(deleteColum=>
-                            {
-                                deleteColum.forEach(block=>
-                                {
-                                    block.getComponent(cc.Animation).stop("delete")
-                                    block.destroy();
-                                });
-        
-                            })
-                            
-                            var index = 0;
-                            blocks.forEach(block=>
-                            {
-                                gri.setBlock(undefined, index, deleteLine);
-                                index ++;
-                            })
-        
-                            //下移
-                            for(;deleteLine >= 0; deleteLine--)
-                            {
-                                for(var f3 = 0; f3 < gri.columnNum; f3 ++)
-                                {
-                                    gri.setBlock(gri.getBlock(f3, deleteLine), f3, deleteLine + 1);
-                                }
-                            }  
-                    }
-                     
-                }, deleteAnimaLen);
             }
             f1 ++;
         })
 
+        downIndex = 0;
+
         //让方块不受控制
         blocks.forEach(value=>
         {
-            value.getComponent("block").active = false;
+            if(typeof value == 'object' )
+                value.getComponent("block").active = false;
         })
         //恢复默认设置
-        autoDownTime = 500;
+        autoDownTime = LOWDOWNTIME;
         this.rightButton.getComponent(cc.Button).interactable = true;
         this.leftButton.getComponent(cc.Button).interactable = true;
 
+        if(hasDelete)
+        {
+            this.scheduleOnce(function()
+            {
+                    //消除动画播放完
+                for(var f2 = deleteYs.length - 1; f2 >= 0; f2 --)
+                {
+                    var deleteLine = deleteYs[f2];
+                    for(var x = 0; x < gri.columnNum; x ++)
+                    {
+                        var block = gri.getBlock(x, deleteLine);
+                        block.getComponent(cc.Animation).stop("delete")
+                        block.destroy();
+                        gri.setBlock(undefined, x, deleteLine);
+                    }
+                }
+
+                for(var top = deleteYs[0] - 1; top >= 0 ; top--)
+                {
+                    for(var f3 = 0; f3 < gri.columnNum; f3 ++)
+                    {
+                        var block = gri.getBlock(f3, top);
+                        gri.setBlock(block, f3, top + deleteYs.length);
+                    }
+                }  
+                
+                this.addblock(blockNames[randomNum(0, 4)]);
+            }, DELETEANIMALEN);
+            return;
+        } 
         this.addblock(blockNames[randomNum(0, 4)]);
 
     },
 
     addblock:function(bolckType)
     {
-        bolckType = '4';
         var scene = cc.director.getScene();
         switch(bolckType)
         {
@@ -530,7 +537,7 @@ cc.Class({
     },
 
     autoDown:function(){
-        setTimeout(() => {
+        this.scheduleOnce(() => {
             this.down();
             this.autoDown();
         }, autoDownTime);

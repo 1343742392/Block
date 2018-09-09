@@ -195,7 +195,8 @@
     },
     "rightButton": {
       "__id__": 15
-    }
+    },
+    "gameover": null
   },
   {
     "__type__": "cc.Node",
